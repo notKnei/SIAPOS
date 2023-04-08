@@ -1,0 +1,36 @@
+{
+  "env": {
+    "es2022": true,
+    "commonjs": true,
+    "node": true
+  },
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "emcaVersion": 2022,
+    "project": [ "./tsconfig.json"]
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "plugins": [
+    "@typescript-eslint",
+    "import"
+  ],
+  "rules": {
+    "import/order": [
+      "error", 
+      {
+        "groups": ["builtin", "external", "internal", "parent", "sibling", "type"],
+        "newlines-between": "always",
+        "alphabetize": {"order": "asc"}
+      }
+    ],
+    "dot-location": ["error", "property"],
+    "dot-notation": "off",
+    "eqeqeq": ["error", "always"],
+    "yoda": "error"
+  }
+}
