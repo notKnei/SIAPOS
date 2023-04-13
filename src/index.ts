@@ -3,13 +3,12 @@ import crypto from 'node:crypto';
 
 import express from 'express';
 
-import type { Track, CurrentlyPlaying } from 'spotify-web-api-ts/types/types/SpotifyObjects';
+import type { Track, CurrentlyPlaying, SimplifiedAlbum } from 'spotify-web-api-ts/types/types/SpotifyObjects';
 import type { GetRecentlyPlayedTracksResponse } from 'spotify-web-api-ts/types/types/SpotifyResponses';
 type error = { error: { status: number; message: string } };
 
 const Express = express();
-const { client_id, client_secret } = process.env as { [key: string]: string };
-const redirect_uri = 'http://localhost:8080/callback';
+const { client_id, client_secret, redirect_uri } = process.env as { [key: string]: string };
 
 let state: string;
 let a_token: string;
@@ -52,9 +51,9 @@ Express.get('/callback', async (req, res) => {
     return res.status(403).send({ success: false, cause: 'Missing Code' });
   }
 
-  res.status(200).send({ success: true, message: 'You can close this page now.' });
+  setInterval(() => getToken({}, r_token), (getToken(res, code as string) - 30) * 1e3);
 
-  setInterval(() => getToken(res, r_token), (getToken(res, code as string) - 30) * 1e3);
+  return;
 });
 
 Express.get('/currentPlayingTrack', async (req, res) => {
@@ -83,7 +82,7 @@ Express.get('/currentPlayingTrack', async (req, res) => {
     return res.status(200).send({
       success: true,
       data: {
-        album: current.album,
+        album: cleanAlbumData(current.album),
         artists: current.artists,
         id: current.id,
         image: current.album.images,
@@ -96,7 +95,7 @@ Express.get('/currentPlayingTrack', async (req, res) => {
     return res.status(200).send({
       success: true,
       data: {
-        album: previous.album,
+        album: cleanAlbumData(previous.album),
         artists: previous.artists,
         id: previous.id,
         image: previous.album.images,
@@ -105,7 +104,7 @@ Express.get('/currentPlayingTrack', async (req, res) => {
     });
   }
 
-  return res.send({
+  return res.status(400).send({
     success: false,
     message: 'uh oh, maybe try going to /login first?',
     data: null,
@@ -143,12 +142,13 @@ function getToken(response: Response<any, Record<string, string>>, code: string)
     })
     .catch((err) => {
       console.error(err);
-      response.redirect(
-        '/#' +
-          new URLSearchParams({
-            error: 'fetch_error',
-          }).toString()
-      );
+      if ( response.keys().length !== 0 )
+        response.redirect(
+          '/#' +
+            new URLSearchParams({
+              error: 'fetch_error',
+            }).toString()
+        );
     });
 
   return validFor;
@@ -157,4 +157,9 @@ function getToken(response: Response<any, Record<string, string>>, code: string)
 function isError(a: unknown): a is error {
   // @ts-expect-error Unknown
   return !!a.error;
+}
+
+function cleanAlbumData(album: SimplifiedAlbum): Omit<SimplifiedAlbum, 'available_markets'> {
+  delete album.available_markets;
+  return album;
 }
