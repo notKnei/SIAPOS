@@ -3,7 +3,11 @@ import crypto from 'node:crypto';
 
 import express from 'express';
 
-import type { Track, CurrentlyPlaying, SimplifiedAlbum } from 'spotify-web-api-ts/types/types/SpotifyObjects';
+import type {
+  Track,
+  CurrentlyPlaying,
+  SimplifiedAlbum,
+} from 'spotify-web-api-ts/types/types/SpotifyObjects';
 import type { GetRecentlyPlayedTracksResponse } from 'spotify-web-api-ts/types/types/SpotifyResponses';
 type error = { error: { status: number; message: string } };
 
@@ -52,6 +56,11 @@ Express.get('/callback', async (req, res) => {
   }
 
   setInterval(() => getToken({}, r_token), (getToken(res, code as string) - 30) * 1e3);
+
+  if (!res.headersSent)
+    res
+      .status(200)
+      .send({ success: true, message: 'You can close this page, or head to /curentPlayingTrack' });
 
   return;
 });
@@ -142,7 +151,7 @@ function getToken(response: Response<any, Record<string, string>>, code: string)
     })
     .catch((err) => {
       console.error(err);
-      if ( response.keys().length !== 0 )
+      if (response.keys().length !== 0)
         response.redirect(
           '/#' +
             new URLSearchParams({
